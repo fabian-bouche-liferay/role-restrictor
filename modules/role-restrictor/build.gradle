@@ -1,0 +1,4 @@
+dependencies {
+	compileOnly group: "com.liferay.portal", name: "release.dxp.api"
+	compileInclude group: "com.github.seancfoley", name: "ipaddress", version: "5.4.0"
+}
