@@ -5,7 +5,6 @@ import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.util.Validator;
 
-import java.util.Arrays;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Activate;
@@ -34,10 +33,8 @@ public class HeaderChecker {
 			Map<String, String> headers = ServiceContextThreadLocal.getServiceContext().getHeaders();
 			if(!headers.containsKey(internalNetworkHeaderName) || 
 					!headers.get(internalNetworkHeaderName).equals(internalNetworkHeaderValue)) {
-				return true;
+				return false;
 			}
-			
-			return false;
 			
 		}
 		return true;

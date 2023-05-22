@@ -1,12 +1,17 @@
 package com.liferay.custom.role.restrictor;
 
 import com.liferay.custom.role.restrictor.configuration.RoleRestrictorConfiguration;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
+import com.liferay.portal.kernel.audit.AuditMessage;
+import com.liferay.portal.kernel.audit.AuditRequestThreadLocal;
+import com.liferay.portal.kernel.audit.AuditRouter;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.LifecycleAction;
 import com.liferay.portal.kernel.events.LifecycleEvent;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.exception.UserLockoutException;
+import com.liferay.portal.kernel.json.JSONFactory;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -16,7 +21,9 @@ import com.liferay.portal.kernel.security.auth.session.AuthenticatedSessionManag
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.security.audit.event.generators.constants.EventTypes;
 
 import java.util.Arrays;
 import java.util.List;
@@ -75,13 +82,27 @@ public class RoleRestrictorPostLoginAction implements LifecycleAction {
 					}
 					
 					if(anyMatch) {
-						if(_log.isDebugEnabled()) {
-							_log.debug("INVALIDATING SESSION for user " + user.getScreenName());
+						
+						StringBundler messageBundler = new StringBundler();
+						messageBundler.append("Invalidating session for user ");
+						messageBundler.append(user.getScreenName());
+						messageBundler.append(" with IP ");
+						messageBundler.append(AuditRequestThreadLocal.getAuditThreadLocal().getClientIP());
+						
+						String message = messageBundler.toString();
+						
+						if(_log.isInfoEnabled()) {
+							_log.info(message);
 						}
+						
 						AuthenticatedSessionManagerUtil.logout(lifecycleEvent.getRequest(), lifecycleEvent.getResponse());
-						return;
+						
+						throw new ForbiddenAccessException(message);
+						
 					}
 					
+				} catch(ForbiddenAccessException e) {
+					throw e;
 				} catch (Exception e) {
 					if(_log.isErrorEnabled()) {
 						_log.error("Danger, could not check roles for access restriction", e);
@@ -111,6 +132,12 @@ public class RoleRestrictorPostLoginAction implements LifecycleAction {
 
 	@Reference
 	private HeaderChecker _headerChecker;
+
+	@Reference
+	private AuditRouter _auditRouter;
+	
+	@Reference
+	private JSONFactory _jsonFactory;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 			RoleRestrictorPostLoginAction.class);
