@@ -38,6 +38,13 @@ public interface RoleRestrictorConfiguration {
 			name = "white-listed-ips", required = false
 	)
 	public String[] whiteListedIPs();
+
+	@Meta.AD(
+			deflt = "",
+			description = "original-client-ip-header-name-description",
+			name = "original-client-ip-header-name", required = false
+	)
+	public String originalClientIPHeaderName();
 	
 	@Meta.AD(
 			deflt = "X-Internal-Network",

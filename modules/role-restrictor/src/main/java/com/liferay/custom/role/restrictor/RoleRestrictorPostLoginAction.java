@@ -38,7 +38,7 @@ import org.osgi.service.component.annotations.Reference;
 		configurationPid = "com.liferay.custom.role.restrictor.configuration.RoleRestrictorConfiguration",
 		immediate = true,
 		property = {
-	        "key=login.events.post"
+	        "key=login.events.pre"
 	    },
 	    service = LifecycleAction.class
 	)
@@ -91,13 +91,18 @@ public class RoleRestrictorPostLoginAction implements LifecycleAction {
 						
 						String message = messageBundler.toString();
 						
-						if(_log.isInfoEnabled()) {
-							_log.info(message);
+						if(_log.isErrorEnabled()) {
+							_log.error(message);
 						}
 						
-						AuthenticatedSessionManagerUtil.logout(lifecycleEvent.getRequest(), lifecycleEvent.getResponse());
+						//AuthenticatedSessionManagerUtil.logout(lifecycleEvent.getRequest(), lifecycleEvent.getResponse());
+						//lifecycleEvent.getRequest().getRequestDispatcher("/c/portal/logout").forward(lifecycleEvent.getRequest(), lifecycleEvent.getResponse());
 						
-						throw new ForbiddenAccessException(message);
+						lifecycleEvent.getRequest().getSession(false).invalidate();
+						
+						lifecycleEvent.getRequest().setAttribute("ROLE_RESTRICTOR", true);
+						
+//						throw new ForbiddenAccessException(message);
 						
 					}
 					
@@ -132,9 +137,6 @@ public class RoleRestrictorPostLoginAction implements LifecycleAction {
 
 	@Reference
 	private HeaderChecker _headerChecker;
-
-	@Reference
-	private AuditRouter _auditRouter;
 	
 	@Reference
 	private JSONFactory _jsonFactory;
